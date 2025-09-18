@@ -279,14 +279,57 @@
     </div>
 
     <script>
-        // Google Apps Script URL
-        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyxs_ivQGuuKvPXo03gZk-sLnYrztj9Cig8isbqaWDTyzm0sw8Mkez2zUG-ovF3cvnB/exec';
+        // ⚠️ แทนที่ URL_ของคุณ ด้วย URL จริงที่ได้จาก Google Apps Script
+        const APPS_SCRIPT_URL = 'URL_ของคุณ';
 
         // ข้อมูลไฟล์ที่อัปโหลด (เก็บใน localStorage สำหรับสถิติ)
         let uploadedFiles = JSON.parse(localStorage.getItem('uploadedFiles')) || [];
 
-        // อัปเดตสถิติ
-        function updateStatistics() {
+        // โหลดสถิติจาก Google Apps Script
+        async function loadStatistics() {
+            try {
+                if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL === 'URL_ของคุณ') {
+                    console.warn('Apps Script URL not configured, using local data');
+                    updateLocalStatistics();
+                    return;
+                }
+
+                const response = await fetch(`${APPS_SCRIPT_URL}?action=getFiles`);
+                
+                // ตรวจสอบว่า response เป็น JSON หรือไม่
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    console.warn('Response is not JSON, likely HTML page. Check Apps Script deployment.');
+                    showMessage('error', 'Google Apps Script ยังไม่ได้ตั้งค่าหรือ deploy ถูกต้อง');
+                    updateLocalStatistics();
+                    return;
+                }
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    const files = result.files;
+                    
+                    document.getElementById('totalFiles').textContent = files.length;
+                    
+                    const uniqueTeachers = [...new Set(files.map(file => file.teacherName))];
+                    document.getElementById('totalTeachers').textContent = uniqueTeachers.length;
+                    
+                    const today = new Date().toDateString();
+                    const todayFiles = files.filter(file => new Date(file.uploadDate).toDateString() === today);
+                    document.getElementById('todayFiles').textContent = todayFiles.length;
+                } else {
+                    console.error('Apps Script error:', result.error);
+                    updateLocalStatistics();
+                }
+            } catch (error) {
+                console.error('Error loading statistics:', error);
+                updateLocalStatistics();
+            }
+        }
+
+        // อัปเดตสถิติจาก localStorage (fallback)
+        function updateLocalStatistics() {
             document.getElementById('totalFiles').textContent = uploadedFiles.length;
             
             const uniqueTeachers = [...new Set(uploadedFiles.map(file => file.teacherName))];
@@ -345,7 +388,7 @@
             }
         }
 
-        // จัดการการส่งฟอร์ม
+        // จัดการการส่งฟอร์ม - แบบ Google Apps Script
         document.getElementById('uploadForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
@@ -357,6 +400,11 @@
                 showMessage('error', 'กรุณากรอกข้อมูลให้ครบถ้วน');
                 return;
             }
+
+            if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL === 'URL_ของคุณ') {
+                showMessage('error', 'กรุณาติดตั้ง Google Apps Script และอัปเดต URL ในโค้ด');
+                return;
+            }
             
             // แสดงสถานะการอัปโหลด
             const submitBtn = document.querySelector('.submit-btn');
@@ -366,6 +414,7 @@
             
             // แสดง progress bar
             progressBar.style.display = 'block';
+            progressFill.style.width = '20%';
             
             try {
                 // สร้าง FormData สำหรับส่งไฟล์
@@ -374,9 +423,9 @@
                 formData.append('documentType', documentType);
                 formData.append('file', file);
 
-                // เริ่มการอัปโหลด
-                progressFill.style.width = '20%';
+                progressFill.style.width = '50%';
                 
+                // ส่งข้อมูลไปยัง Google Apps Script
                 const response = await fetch(APPS_SCRIPT_URL, {
                     method: 'POST',
                     body: formData
@@ -388,7 +437,7 @@
                 progressFill.style.width = '100%';
 
                 if (result.success) {
-                    // บันทึกข้อมูลสำหรับสถิติ
+                    // บันทึกข้อมูลสำหรับสถิติใน localStorage (fallback)
                     const newFile = {
                         id: result.data.fileId,
                         fileName: result.data.fileName,
@@ -409,14 +458,18 @@
                     showMessage('success', `ส่งเอกสารเรียบร้อยแล้ว!\nไฟล์ถูกบันทึกเป็น: ${result.data.fileName}\nในโฟลเดอร์: ${result.data.folder}`);
                     
                     // อัปเดตการแสดงผล
-                    updateStatistics();
+                    loadStatistics();
                 } else {
-                    showMessage('error', `เกิดข้อผิดพลาด: ${result.error}`);
+                    showMessage('error', `เกิดข้อผิดพลาด: ${result.error || 'ไม่สามารถอัปโหลดไฟล์ได้'}`);
+                    
+                    if (result.debug) {
+                        console.log('Debug info:', result.debug);
+                    }
                 }
                 
             } catch (error) {
                 console.error('Upload error:', error);
-                showMessage('error', 'เกิดข้อผิดพลาดในการอัปโหลดไฟล์ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ตและลองใหม่อีกครั้ง');
+                showMessage('error', 'เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาตรวจสอบ URL ของ Google Apps Script และลองใหม่อีกครั้ง');
             } finally {
                 // คืนสถานะปุ่ม
                 submitBtn.innerHTML = originalText;
@@ -443,17 +496,15 @@
                 errorMsg.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${message.replace(/\n/g, '<br>')}`;
                 errorMsg.style.display = 'block';
                 successMsg.style.display = 'none';
-                setTimeout(() => errorMsg.style.display = 'none', 5000);
+                setTimeout(() => errorMsg.style.display = 'none', 8000);
             }
         }
 
         // เริ่มต้น
-        updateStatistics();
+        loadStatistics();
+        
+        // อัปเดตสถิติทุก 30 วินาที
+        setInterval(loadStatistics, 30000);
     </script>
 </body>
 </html>
-
-
-
-
-
