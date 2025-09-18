@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบส่งเอกสารโรงเรียนลองวิทยาลัย</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Prompt', 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card h2 {
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: bold;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e1e1;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .file-upload {
+            border: 2px dashed #ccc;
+            padding: 40px 20px;
+            text-align: center;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #fafafa;
+        }
+
+        .file-upload:hover {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+
+        .file-upload.dragover {
+            border-color: #667eea;
+            background: #e8f0ff;
+        }
+
+        .file-upload i {
+            font-size: 3rem;
+            color: #ccc;
+            margin-bottom: 15px;
+        }
+
+        .file-upload:hover i {
+            color: #667eea;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .admin-section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-top: 30px;
+        }
+
+        .tab-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .tab-button {
+            padding: 10px 20px;
+            background: #f5f5f5;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+
+        .tab-button.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .file-list {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #e1e1e1;
+            border-radius: 8px;
+            padding: 15px;
+        }
+
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background-color 0.2s ease;
+        }
+
+        .file-item:hover {
+            background-color: #f8f9ff;
+        }
+
+        .file-info {
+            flex: 1;
+        }
+
+        .file-name {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .file-meta {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .file-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .action-btn {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s ease;
+        }
+
+        .download-btn {
+            background: #28a745;
+            color: white;
+        }
+
+        .download-btn:hover {
+            background: #218838;
+        }
+
+        .delete-btn {
+            background: #dc3545;
+            color: white;
+        }
+
+        .delete-btn:hover {
+            background: #c82333;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            display: none;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .tab-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-school"></i> ระบบส่งเอกสารโรงเรียนลองวิทยาลัย</h1>
+        </div>
+
+        <div class="main-content">
+            <!-- ฟอร์มส่งเอกสาร -->
+            <div class="card">
+                <h2><i class="fas fa-upload"></i> ส่งเอกสาร</h2>
+                <form id="uploadForm">
+                    <div class="form-group">
+                        <label for="teacherName">ชื่อ-นามสกุล <span style="color: red;">*</span></label>
+                        <input type="text" id="teacherName" name="teacherName" required placeholder="กรอกชื่อ-นามสกุลของท่าน">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="documentType">ประเภทเอกสาร <span style="color: red;">*</span></label>
+                        <select id="documentType" name="documentType" required>
+                            <option value="">-- เลือกประเภทเอกสาร --</option>
+                            <option value="PA69">ข้อตกลงในการพัฒนางาน PA69</option>
+                            <option value="PA70">ข้อตกลงในการพัฒนางาน PA70</option>
+                            <option value="PA71">ข้อตกลงในการพัฒนางาน PA71</option>
+                            <option value="PA72">ข้อตกลงในการพัฒนางาน PA72</option>
+                            <option value="PA73">ข้อตกลงในการพัฒนางาน PA73</option>
+                            <option value="HRMS">ข้อมูลส่วนตัว HRMS</option>
+                            <option value="LICENSE">ใบประกอบวิชาชีพ</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>ไฟล์เอกสาร <span style="color: red;">*</span></label>
+                        <div class="file-upload" id="fileUpload">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <p>คลิกหรือลากไฟล์มาวางที่นี่</p>
+                            <p style="font-size: 0.9rem; color: #666; margin-top: 5px;">
+                                รองรับไฟล์: PDF, DOC, DOCX, EXCEL, JPG, PNG
+                            </p>
+                            <input type="file" id="fileInput" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" style="display: none;" required>
+                        </div>
+                        <div id="selectedFile" style="margin-top: 10px; font-weight: bold; color: #333;"></div>
+                    </div>
+
+                    <button type="submit" class="submit-btn">
+                        <i class="fas fa-paper-plane"></i> ส่งเอกสาร
+                    </button>
+                </form>
+
+                <div id="successMessage" class="success-message">
+                    <i class="fas fa-check-circle"></i> ส่งเอกสารเรียบร้อยแล้ว!
+                </div>
+
+                <div id="errorMessage" class="error-message">
+                    <i class="fas fa-exclamation-circle"></i> เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง
+                </div>
+            </div>
+
+            <!-- สถิติการส่งเอกสาร -->
+            <div class="card">
+                <h2><i class="fas fa-chart-bar"></i> สถิติการส่งเอกสาร</h2>
+                <div id="statistics">
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #f8f9ff; border-radius: 8px; margin-bottom: 10px;">
+                        <span><i class="fas fa-file-alt"></i> เอกสารทั้งหมด</span>
+                        <span id="totalFiles" style="font-weight: bold; color: #667eea;">0</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #f0fff4; border-radius: 8px; margin-bottom: 10px;">
+                        <span><i class="fas fa-users"></i> ครูที่ส่งแล้ว</span>
+                        <span id="totalTeachers" style="font-weight: bold; color: #28a745;">0</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #fff5f5; border-radius: 8px;">
+                        <span><i class="fas fa-clock"></i> วันนี้</span>
+                        <span id="todayFiles" style="font-weight: bold; color: #dc3545;">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ข้อความสำหรับแอดมิน -->
+        <div style="text-align: center; margin-top: 40px; padding: 20px; background: rgba(255,255,255,0.1); border-radius: 10px;">
+            <p style="color: white; font-size: 1.1rem;">
+                <i class="fas fa-info-circle"></i> 
+                สำหรับแอดมิน: <a href="admin.html" style="color: #FFD700; text-decoration: underline;">คลิกที่นี่เพื่อเข้าสู่แผงควบคุม</a>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Google Drive API Configuration
+        const GOOGLE_DRIVE_CONFIG = {
+            folderId: '1c_7i6kzQNYtrHh7rJ-UShaZjC8Tfnp9A',
+            serviceAccountEmail: 'document-uploader@boxwood-faculty-472505-g7.iam.gserviceaccount.com'
+        };
+
+        // ข้อมูลไฟล์ที่อัปโหลด
+        let uploadedFiles = JSON.parse(localStorage.getItem('uploadedFiles')) || [];
+        let currentFilter = 'all';
+
+        // Google Drive API Functions
+        async function uploadToGoogleDrive(file, teacherName, documentType) {
+            try {
+                // สร้างชื่อโฟลเดอร์ตามประเภทเอกสาร
+                const subFolderName = getDocumentTypeName(documentType);
+                
+                // สร้างชื่อไฟล์ใหม่ที่มีชื่อครู
+                const timestamp = new Date().toISOString().slice(0, 10);
+                const fileExtension = file.name.split('.').pop();
+                const newFileName = `${teacherName}_${documentType}_${timestamp}.${fileExtension}`;
+                
+                // จำลองการอัปโหลด (ในการใช้งานจริงจะเรียก Google Drive API)
+                console.log('Uploading to Google Drive:', {
+                    fileName: newFileName,
+                    folderId: GOOGLE_DRIVE_CONFIG.folderId,
+                    subFolder: subFolderName,
+                    teacherName: teacherName,
+                    documentType: documentType
+                });
+                
+                // สำหรับการทดสอบ ให้ return ข้อมูลจำลอง
+                return {
+                    success: true,
+                    fileId: 'drive_' + Date.now(),
+                    fileName: newFileName,
+                    webViewLink: `https://drive.google.com/file/d/drive_${Date.now()}/view`
+                };
+                
+            } catch (error) {
+                console.error('Error uploading to Google Drive:', error);
+                return { success: false, error: error.message };
+            }
+        }
+
+        async function listGoogleDriveFiles() {
+            try {
+                // จำลองการดึงข้อมูลจาก Google Drive
+                // ในการใช้งานจริงจะเรียก Google Drive API เพื่อดึงรายการไฟล์
+                console.log('Fetching files from Google Drive folder:', GOOGLE_DRIVE_CONFIG.folderId);
+                
+                // ใช้ข้อมูลจาก localStorage สำหรับการทดสอบ
+                return uploadedFiles;
+                
+            } catch (error) {
+                console.error('Error listing Google Drive files:', error);
+                return [];
+            }
+        }
+
+        // อัปเดตสถิติ
+        function updateStatistics() {
+            document.getElementById('totalFiles').textContent = uploadedFiles.length;
+            
+            const uniqueTeachers = [...new Set(uploadedFiles.map(file => file.teacherName))];
+            document.getElementById('totalTeachers').textContent = uniqueTeachers.length;
+            
+            const today = new Date().toDateString();
+            const todayFiles = uploadedFiles.filter(file => new Date(file.uploadDate).toDateString() === today);
+            document.getElementById('todayFiles').textContent = todayFiles.length;
+        }
+
+        // แสดงรายการไฟล์
+        function displayFiles(filter = 'all') {
+            const fileList = document.getElementById('fileList');
+            let filteredFiles = uploadedFiles;
+            
+            if (filter !== 'all') {
+                filteredFiles = uploadedFiles.filter(file => file.documentType === filter);
+            }
+            
+            if (filteredFiles.length === 0) {
+                fileList.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: #666;">
+                        <i class="fas fa-folder-open" style="font-size: 3rem; margin-bottom: 15px;"></i>
+                        <p>${filter === 'all' ? 'ยังไม่มีเอกสารที่ส่งมา' : 'ไม่มีเอกสารในหมวดนี้'}</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            fileList.innerHTML = filteredFiles.map((file, index) => `
+                <div class="file-item">
+                    <div class="file-info">
+                        <div class="file-name">${file.fileName}</div>
+                        <div class="file-meta">
+                            ครู: ${file.teacherName} | ประเภท: ${getDocumentTypeName(file.documentType)} | 
+                            วันที่: ${new Date(file.uploadDate).toLocaleDateString('th-TH')}
+                        </div>
+                    </div>
+                    <div class="file-actions">
+                        <button class="action-btn download-btn" onclick="downloadFile(${index})">
+                            <i class="fas fa-download"></i> ดาวน์โหลด
+                        </button>
+                        <button class="action-btn delete-btn" onclick="deleteFile(${index})">
+                            <i class="fas fa-trash"></i> ลบ
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // แปลงชื่อประเภทเอกสาร
+        function getDocumentTypeName(type) {
+            const types = {
+                'PA69': 'PA69',
+                'PA70': 'PA70', 
+                'PA71': 'PA71',
+                'PA72': 'PA72',
+                'PA73': 'PA73',
+                'HRMS': 'HRMS',
+                'LICENSE': 'ใบประกอบวิชาชีพ'
+            };
+            return types[type] || type;
+        }
+
+        // กรองไฟล์ตามประเภท
+        function filterFiles(filter) {
+            currentFilter = filter;
+            
+            // อัปเดตปุ่ม active
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            displayFiles(filter);
+        }
+
+        // ดาวน์โหลดไฟล์
+        function downloadFile(index) {
+            const file = uploadedFiles[index];
+            if (file.webViewLink) {
+                // เปิดลิงก์ Google Drive ในแท็บใหม่
+                window.open(file.webViewLink, '_blank');
+            } else {
+                alert(`ดาวน์โหลดไฟล์: ${file.fileName}\nจาก Google Drive โฟลเดอร์: เอกสารโรงเรียน-2569/${getDocumentTypeName(file.documentType)}`);
+            }
+        }
+
+        // ลบไฟล์
+        function deleteFile(index) {
+            if (confirm('คุณแน่ใจหรือไม่ที่จะลบไฟล์นี้?')) {
+                uploadedFiles.splice(index, 1);
+                localStorage.setItem('uploadedFiles', JSON.stringify(uploadedFiles));
+                displayFiles(currentFilter);
+                updateStatistics();
+            }
+        }
+
+        // จัดการการอัปโหลดไฟล์
+        const fileUpload = document.getElementById('fileUpload');
+        const fileInput = document.getElementById('fileInput');
+        const selectedFile = document.getElementById('selectedFile');
+
+        fileUpload.addEventListener('click', () => fileInput.click());
+
+        fileUpload.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            fileUpload.classList.add('dragover');
+        });
+
+        fileUpload.addEventListener('dragleave', () => {
+            fileUpload.classList.remove('dragover');
+        });
+
+        fileUpload.addEventListener('drop', (e) => {
+            e.preventDefault();
+            fileUpload.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                fileInput.files = files;
+                handleFileSelect();
+            }
+        });
+
+        fileInput.addEventListener('change', handleFileSelect);
+
+        function handleFileSelect() {
+            const file = fileInput.files[0];
+            if (file) {
+                selectedFile.innerHTML = `
+                    <i class="fas fa-file"></i> ${file.name} 
+                    <span style="color: #666; font-weight: normal;">(${(file.size / 1024 / 1024).toFixed(2)} MB)</span>
+                `;
+            }
+        }
+
+        // จัดการการส่งฟอร์ม
+        document.getElementById('uploadForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const teacherName = document.getElementById('teacherName').value;
+            const documentType = document.getElementById('documentType').value;
+            const file = fileInput.files[0];
+            
+            if (!teacherName || !documentType || !file) {
+                showMessage('error', 'กรุณากรอกข้อมูลให้ครบถ้วน');
+                return;
+            }
+            
+            // แสดงสถานะการอัปโหลด
+            const submitBtn = document.querySelector('.submit-btn');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> กำลังอัปโหลด...';
+            submitBtn.disabled = true;
+            
+            try {
+                // อัปโหลดไฟล์ไป Google Drive
+                const uploadResult = await uploadToGoogleDrive(file, teacherName, documentType);
+                
+                if (uploadResult.success) {
+                    // เก็บข้อมูลไฟล์
+                    const newFile = {
+                        id: uploadResult.fileId,
+                        fileName: uploadResult.fileName,
+                        originalFileName: file.name,
+                        teacherName: teacherName,
+                        documentType: documentType,
+                        uploadDate: new Date().toISOString(),
+                        fileSize: file.size,
+                        webViewLink: uploadResult.webViewLink
+                    };
+                    
+                    uploadedFiles.push(newFile);
+                    localStorage.setItem('uploadedFiles', JSON.stringify(uploadedFiles));
+                    
+                    // รีเซ็ตฟอร์ม
+                    this.reset();
+                    selectedFile.innerHTML = '';
+                    
+                    // แสดงข้อความสำเร็จ
+                    showMessage('success', `ส่งเอกสารเรียบร้อยแล้ว! ไฟล์ถูกเก็บเป็น: ${uploadResult.fileName}`);
+                    
+                    // อัปเดตการแสดงผล
+                    updateStatistics();
+                    displayFiles(currentFilter);
+                } else {
+                    showMessage('error', `เกิดข้อผิดพลาด: ${uploadResult.error}`);
+                }
+                
+            } catch (error) {
+                console.error('Upload error:', error);
+                showMessage('error', 'เกิดข้อผิดพลาดในการอัปโหลดไฟล์');
+            } finally {
+                // คืนสถานะปุ่ม
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        });
+
+        function showMessage(type, message) {
+            const successMsg = document.getElementById('successMessage');
+            const errorMsg = document.getElementById('errorMessage');
+            
+            if (type === 'success') {
+                successMsg.textContent = message;
+                successMsg.style.display = 'block';
+                errorMsg.style.display = 'none';
+                setTimeout(() => successMsg.style.display = 'none', 3000);
+            } else {
+                errorMsg.textContent = message;
+                errorMsg.style.display = 'block';
+                successMsg.style.display = 'none';
+                setTimeout(() => errorMsg.style.display = 'none', 3000);
+            }
+        }
+
+        // เริ่มต้น
+        updateStatistics();
+    </script>
+</body>
+</html>
