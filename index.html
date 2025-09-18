@@ -36,11 +36,6 @@
             text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
         }
 
-        .header p {
-            font-size: 1.1rem;
-            opacity: 0.9;
-        }
-
         .main-content {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -148,104 +143,6 @@
             transform: none;
         }
 
-        .admin-section {
-            background: white;
-            border-radius: 15px;
-            padding: 30px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            margin-top: 30px;
-        }
-
-        .tab-buttons {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-
-        .tab-button {
-            padding: 10px 20px;
-            background: #f5f5f5;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-weight: bold;
-        }
-
-        .tab-button.active {
-            background: #667eea;
-            color: white;
-        }
-
-        .file-list {
-            max-height: 400px;
-            overflow-y: auto;
-            border: 1px solid #e1e1e1;
-            border-radius: 8px;
-            padding: 15px;
-        }
-
-        .file-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px;
-            border-bottom: 1px solid #f0f0f0;
-            transition: background-color 0.2s ease;
-        }
-
-        .file-item:hover {
-            background-color: #f8f9ff;
-        }
-
-        .file-info {
-            flex: 1;
-        }
-
-        .file-name {
-            font-weight: bold;
-            color: #333;
-            margin-bottom: 5px;
-        }
-
-        .file-meta {
-            font-size: 0.9rem;
-            color: #666;
-        }
-
-        .file-actions {
-            display: flex;
-            gap: 10px;
-        }
-
-        .action-btn {
-            padding: 8px 12px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 0.8rem;
-            transition: all 0.2s ease;
-        }
-
-        .download-btn {
-            background: #28a745;
-            color: white;
-        }
-
-        .download-btn:hover {
-            background: #218838;
-        }
-
-        .delete-btn {
-            background: #dc3545;
-            color: white;
-        }
-
-        .delete-btn:hover {
-            background: #c82333;
-        }
-
         .success-message {
             background: #d4edda;
             color: #155724;
@@ -264,6 +161,23 @@
             display: none;
         }
 
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #f0f0f0;
+            border-radius: 3px;
+            margin-top: 10px;
+            overflow: hidden;
+            display: none;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
         @media (max-width: 768px) {
             .main-content {
                 grid-template-columns: 1fr;
@@ -271,10 +185,6 @@
             
             .header h1 {
                 font-size: 2rem;
-            }
-            
-            .tab-buttons {
-                flex-direction: column;
             }
         }
     </style>
@@ -315,11 +225,14 @@
                             <i class="fas fa-cloud-upload-alt"></i>
                             <p>คลิกหรือลากไฟล์มาวางที่นี่</p>
                             <p style="font-size: 0.9rem; color: #666; margin-top: 5px;">
-                                รองรับไฟล์: PDF, DOC, DOCX, EXCEL, JPG, PNG
+                                รองรับไฟล์: PDF, DOC, DOCX, EXCEL, JPG, PNG (ขนาดสูงสุด 10MB)
                             </p>
                             <input type="file" id="fileInput" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" style="display: none;" required>
                         </div>
                         <div id="selectedFile" style="margin-top: 10px; font-weight: bold; color: #333;"></div>
+                        <div class="progress-bar" id="progressBar">
+                            <div class="progress-fill" id="progressFill"></div>
+                        </div>
                     </div>
 
                     <button type="submit" class="submit-btn">
@@ -366,64 +279,11 @@
     </div>
 
     <script>
-        // Google Drive API Configuration
-        const GOOGLE_DRIVE_CONFIG = {
-            folderId: '1c_7i6kzQNYtrHh7rJ-UShaZjC8Tfnp9A',
-            serviceAccountEmail: 'document-uploader@boxwood-faculty-472505-g7.iam.gserviceaccount.com'
-        };
+        // Google Apps Script URL
+        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxQwFOmvCb71h2wJJXzeuIGJRr0KeUfyqy5SlusRcM3ZdEX_dn_tS_e_xMI-G7S25W-/exec';
 
-        // ข้อมูลไฟล์ที่อัปโหลด
+        // ข้อมูลไฟล์ที่อัปโหลด (เก็บใน localStorage สำหรับสถิติ)
         let uploadedFiles = JSON.parse(localStorage.getItem('uploadedFiles')) || [];
-        let currentFilter = 'all';
-
-        // Google Drive API Functions
-        async function uploadToGoogleDrive(file, teacherName, documentType) {
-            try {
-                // สร้างชื่อโฟลเดอร์ตามประเภทเอกสาร
-                const subFolderName = getDocumentTypeName(documentType);
-                
-                // สร้างชื่อไฟล์ใหม่ที่มีชื่อครู
-                const timestamp = new Date().toISOString().slice(0, 10);
-                const fileExtension = file.name.split('.').pop();
-                const newFileName = `${teacherName}_${documentType}_${timestamp}.${fileExtension}`;
-                
-                // จำลองการอัปโหลด (ในการใช้งานจริงจะเรียก Google Drive API)
-                console.log('Uploading to Google Drive:', {
-                    fileName: newFileName,
-                    folderId: GOOGLE_DRIVE_CONFIG.folderId,
-                    subFolder: subFolderName,
-                    teacherName: teacherName,
-                    documentType: documentType
-                });
-                
-                // สำหรับการทดสอบ ให้ return ข้อมูลจำลอง
-                return {
-                    success: true,
-                    fileId: 'drive_' + Date.now(),
-                    fileName: newFileName,
-                    webViewLink: `https://drive.google.com/file/d/drive_${Date.now()}/view`
-                };
-                
-            } catch (error) {
-                console.error('Error uploading to Google Drive:', error);
-                return { success: false, error: error.message };
-            }
-        }
-
-        async function listGoogleDriveFiles() {
-            try {
-                // จำลองการดึงข้อมูลจาก Google Drive
-                // ในการใช้งานจริงจะเรียก Google Drive API เพื่อดึงรายการไฟล์
-                console.log('Fetching files from Google Drive folder:', GOOGLE_DRIVE_CONFIG.folderId);
-                
-                // ใช้ข้อมูลจาก localStorage สำหรับการทดสอบ
-                return uploadedFiles;
-                
-            } catch (error) {
-                console.error('Error listing Google Drive files:', error);
-                return [];
-            }
-        }
 
         // อัปเดตสถิติ
         function updateStatistics() {
@@ -437,96 +297,12 @@
             document.getElementById('todayFiles').textContent = todayFiles.length;
         }
 
-        // แสดงรายการไฟล์
-        function displayFiles(filter = 'all') {
-            const fileList = document.getElementById('fileList');
-            let filteredFiles = uploadedFiles;
-            
-            if (filter !== 'all') {
-                filteredFiles = uploadedFiles.filter(file => file.documentType === filter);
-            }
-            
-            if (filteredFiles.length === 0) {
-                fileList.innerHTML = `
-                    <div style="text-align: center; padding: 40px; color: #666;">
-                        <i class="fas fa-folder-open" style="font-size: 3rem; margin-bottom: 15px;"></i>
-                        <p>${filter === 'all' ? 'ยังไม่มีเอกสารที่ส่งมา' : 'ไม่มีเอกสารในหมวดนี้'}</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            fileList.innerHTML = filteredFiles.map((file, index) => `
-                <div class="file-item">
-                    <div class="file-info">
-                        <div class="file-name">${file.fileName}</div>
-                        <div class="file-meta">
-                            ครู: ${file.teacherName} | ประเภท: ${getDocumentTypeName(file.documentType)} | 
-                            วันที่: ${new Date(file.uploadDate).toLocaleDateString('th-TH')}
-                        </div>
-                    </div>
-                    <div class="file-actions">
-                        <button class="action-btn download-btn" onclick="downloadFile(${index})">
-                            <i class="fas fa-download"></i> ดาวน์โหลด
-                        </button>
-                        <button class="action-btn delete-btn" onclick="deleteFile(${index})">
-                            <i class="fas fa-trash"></i> ลบ
-                        </button>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        // แปลงชื่อประเภทเอกสาร
-        function getDocumentTypeName(type) {
-            const types = {
-                'PA69': 'PA69',
-                'PA70': 'PA70', 
-                'PA71': 'PA71',
-                'PA72': 'PA72',
-                'PA73': 'PA73',
-                'HRMS': 'HRMS',
-                'LICENSE': 'ใบประกอบวิชาชีพ'
-            };
-            return types[type] || type;
-        }
-
-        // กรองไฟล์ตามประเภท
-        function filterFiles(filter) {
-            currentFilter = filter;
-            
-            // อัปเดตปุ่ม active
-            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
-            
-            displayFiles(filter);
-        }
-
-        // ดาวน์โหลดไฟล์
-        function downloadFile(index) {
-            const file = uploadedFiles[index];
-            if (file.webViewLink) {
-                // เปิดลิงก์ Google Drive ในแท็บใหม่
-                window.open(file.webViewLink, '_blank');
-            } else {
-                alert(`ดาวน์โหลดไฟล์: ${file.fileName}\nจาก Google Drive โฟลเดอร์: เอกสารโรงเรียน-2569/${getDocumentTypeName(file.documentType)}`);
-            }
-        }
-
-        // ลบไฟล์
-        function deleteFile(index) {
-            if (confirm('คุณแน่ใจหรือไม่ที่จะลบไฟล์นี้?')) {
-                uploadedFiles.splice(index, 1);
-                localStorage.setItem('uploadedFiles', JSON.stringify(uploadedFiles));
-                displayFiles(currentFilter);
-                updateStatistics();
-            }
-        }
-
         // จัดการการอัปโหลดไฟล์
         const fileUpload = document.getElementById('fileUpload');
         const fileInput = document.getElementById('fileInput');
         const selectedFile = document.getElementById('selectedFile');
+        const progressBar = document.getElementById('progressBar');
+        const progressFill = document.getElementById('progressFill');
 
         fileUpload.addEventListener('click', () => fileInput.click());
 
@@ -554,6 +330,14 @@
         function handleFileSelect() {
             const file = fileInput.files[0];
             if (file) {
+                // ตรวจสอบขนาดไฟล์ (10MB = 10 * 1024 * 1024 bytes)
+                if (file.size > 10 * 1024 * 1024) {
+                    showMessage('error', 'ไฟล์มีขนาดใหญ่เกิน 10MB กรุณาเลือกไฟล์ที่เล็กกว่า');
+                    fileInput.value = '';
+                    selectedFile.innerHTML = '';
+                    return;
+                }
+
                 selectedFile.innerHTML = `
                     <i class="fas fa-file"></i> ${file.name} 
                     <span style="color: #666; font-weight: normal;">(${(file.size / 1024 / 1024).toFixed(2)} MB)</span>
@@ -565,7 +349,7 @@
         document.getElementById('uploadForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
-            const teacherName = document.getElementById('teacherName').value;
+            const teacherName = document.getElementById('teacherName').value.trim();
             const documentType = document.getElementById('documentType').value;
             const file = fileInput.files[0];
             
@@ -580,21 +364,38 @@
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> กำลังอัปโหลด...';
             submitBtn.disabled = true;
             
+            // แสดง progress bar
+            progressBar.style.display = 'block';
+            
             try {
-                // อัปโหลดไฟล์ไป Google Drive
-                const uploadResult = await uploadToGoogleDrive(file, teacherName, documentType);
+                // สร้าง FormData สำหรับส่งไฟล์
+                const formData = new FormData();
+                formData.append('teacherName', teacherName);
+                formData.append('documentType', documentType);
+                formData.append('file', file);
+
+                // เริ่มการอัปโหลด
+                progressFill.style.width = '20%';
                 
-                if (uploadResult.success) {
-                    // เก็บข้อมูลไฟล์
+                const response = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                progressFill.style.width = '80%';
+
+                const result = await response.json();
+                progressFill.style.width = '100%';
+
+                if (result.success) {
+                    // บันทึกข้อมูลสำหรับสถิติ
                     const newFile = {
-                        id: uploadResult.fileId,
-                        fileName: uploadResult.fileName,
-                        originalFileName: file.name,
+                        id: result.data.fileId,
+                        fileName: result.data.fileName,
                         teacherName: teacherName,
                         documentType: documentType,
                         uploadDate: new Date().toISOString(),
-                        fileSize: file.size,
-                        webViewLink: uploadResult.webViewLink
+                        fileSize: file.size
                     };
                     
                     uploadedFiles.push(newFile);
@@ -605,22 +406,27 @@
                     selectedFile.innerHTML = '';
                     
                     // แสดงข้อความสำเร็จ
-                    showMessage('success', `ส่งเอกสารเรียบร้อยแล้ว! ไฟล์ถูกเก็บเป็น: ${uploadResult.fileName}`);
+                    showMessage('success', `ส่งเอกสารเรียบร้อยแล้ว!\nไฟล์ถูกบันทึกเป็น: ${result.data.fileName}\nในโฟลเดอร์: ${result.data.folder}`);
                     
                     // อัปเดตการแสดงผล
                     updateStatistics();
-                    displayFiles(currentFilter);
                 } else {
-                    showMessage('error', `เกิดข้อผิดพลาด: ${uploadResult.error}`);
+                    showMessage('error', `เกิดข้อผิดพลาด: ${result.error}`);
                 }
                 
             } catch (error) {
                 console.error('Upload error:', error);
-                showMessage('error', 'เกิดข้อผิดพลาดในการอัปโหลดไฟล์');
+                showMessage('error', 'เกิดข้อผิดพลาดในการอัปโหลดไฟล์ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ตและลองใหม่อีกครั้ง');
             } finally {
                 // คืนสถานะปุ่ม
                 submitBtn.innerHTML = originalText;
                 submitBtn.disabled = false;
+                
+                // ซ่อน progress bar
+                setTimeout(() => {
+                    progressBar.style.display = 'none';
+                    progressFill.style.width = '0%';
+                }, 1000);
             }
         });
 
@@ -629,15 +435,15 @@
             const errorMsg = document.getElementById('errorMessage');
             
             if (type === 'success') {
-                successMsg.textContent = message;
+                successMsg.innerHTML = `<i class="fas fa-check-circle"></i> ${message.replace(/\n/g, '<br>')}`;
                 successMsg.style.display = 'block';
                 errorMsg.style.display = 'none';
-                setTimeout(() => successMsg.style.display = 'none', 3000);
+                setTimeout(() => successMsg.style.display = 'none', 8000);
             } else {
-                errorMsg.textContent = message;
+                errorMsg.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${message.replace(/\n/g, '<br>')}`;
                 errorMsg.style.display = 'block';
                 successMsg.style.display = 'none';
-                setTimeout(() => errorMsg.style.display = 'none', 3000);
+                setTimeout(() => errorMsg.style.display = 'none', 5000);
             }
         }
 
