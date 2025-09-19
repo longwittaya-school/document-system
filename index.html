@@ -389,12 +389,29 @@
         }
 
         // จัดการการส่งฟอร์ม - แบบ Google Apps Script
-        document.getElementById('uploadForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const teacherName = document.getElementById('teacherName').value.trim();
-            const documentType = document.getElementById('documentType').value;
-            const file = fileInput.files[0];
+document.getElementById('uploadForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const teacherName = document.getElementById('teacherName').value.trim();
+    const documentType = document.getElementById('documentType').value;
+    const fileInput = document.getElementById('fileInput');
+    const file = fileInput.files[0];
+    
+    // === เพิ่มโค้ด DEBUG ตรงนี้ ===
+    console.log('=== File Debug ===');
+    console.log('File input:', fileInput);
+    console.log('Files count:', fileInput.files.length);
+    console.log('File object:', file);
+    console.log('File name:', file ? file.name : 'NO FILE');
+    console.log('File size:', file ? file.size : 'NO FILE');
+    console.log('Teacher name:', teacherName);
+    console.log('Document type:', documentType);
+    // === จบ DEBUG ===
+    
+    if (!teacherName || !documentType || !file) {
+        showMessage('error', 'กรุณากรอกข้อมูลให้ครบถ้วน');
+        return;
+    }
             
             if (!teacherName || !documentType || !file) {
                 showMessage('error', 'กรุณากรอกข้อมูลให้ครบถ้วน');
@@ -418,10 +435,22 @@
             
             try {
                 // สร้าง FormData สำหรับส่งไฟล์
-                const formData = new FormData();
-                formData.append('teacherName', teacherName);
-                formData.append('documentType', documentType);
-                formData.append('file', file);
+const formData = new FormData();
+formData.append('teacherName', teacherName);
+formData.append('documentType', documentType);
+formData.append('file', file, file.name);
+
+// === เพิ่ม DEBUG FormData ===
+console.log('=== FormData Debug ===');
+for (let pair of formData.entries()) {
+    console.log(pair[0] + ':', pair[1]);
+    if (pair[1] instanceof File) {
+        console.log('  -> File name:', pair[1].name);
+        console.log('  -> File size:', pair[1].size);
+        console.log('  -> File type:', pair[1].type);
+    }
+}
+// === จบ DEBUG ===
 
                 progressFill.style.width = '50%';
                 
@@ -508,6 +537,7 @@
     </script>
 </body>
 </html>
+
 
 
 
